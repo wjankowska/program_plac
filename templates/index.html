@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Płacowy – Payroll Core</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">System Płacowy</h1>
+                <p class="text-slate-500 text-sm">Automatyczne naliczanie list płac na podstawie RCP i e-ZLA</p>
+            </div>
+            <div class="flex gap-3">
+                <form action="/payroll/calculate-view" method="post">
+                    <input type="hidden" name="year" value="2026">
+                    <input type="hidden" name="month" value="9">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
+                        ⚡ Przelicz wrzesień 2026
+                    </button>
+                </form>
+                <a href="/payroll/export-elixir-file?year=2026&month=9" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
+                    📥 Paczka do banku (Elixir)
+                </a>
+            </div>
+        </div>
+
+        <!-- Karty ze statystykami -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-semibold uppercase text-slate-400">Pracownicy</span>
+                <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.total_employees }}</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-semibold uppercase text-slate-400">Suma Brutto</span>
+                <p class="text-2xl font-bold text-slate-900 mt-1">{{ "%.2f"|format(stats.total_gross) }} zł</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-semibold uppercase text-slate-400">Składki ZUS (Pracownik)</span>
+                <p class="text-2xl font-bold text-indigo-600 mt-1">{{ "%.2f"|format(stats.total_zus) }} zł</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-semibold uppercase text-slate-400">Do wypłaty (Netto)</span>
+                <p class="text-2xl font-bold text-emerald-600 mt-1">{{ "%.2f"|format(stats.total_net) }} zł</p>
+            </div>
+        </div>
+
+        <!-- Tabela z listą płac -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="font-semibold text-slate-800">Lista płac – Wrzesień 2026</h2>
+                <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-medium">50 pozycji</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">Pracownik</th>
+                            <th class="px-6 py-3 font-semibold">Karta UID</th>
+                            <th class="px-6 py-3 font-semibold text-center">Chorobowe</th>
+                            <th class="px-6 py-3 font-semibold text-right">Zasadnicza</th>
+                            <th class="px-6 py-3 font-semibold text-right">Brutto</th>
+                            <th class="px-6 py-3 font-semibold text-right">ZUS</th>
+                            <th class="px-6 py-3 font-semibold text-right">PIT</th>
+                            <th class="px-6 py-3 font-semibold text-right text-slate-900">Netto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in records %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-6 py-4 font-medium text-slate-900">
+                                {{ item.employee.first_name }} {{ item.employee.last_name }}
+                            </td>
+                            <td class="px-6 py-4 font-mono text-xs text-slate-400">
+                                {{ item.employee.card_uid }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if item.sick_days > 0 %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                        {{ item.sick_days }} dni ZLA
+                                    </span>
+                                {% else %}
+                                    <span class="text-slate-300">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">{{ "%.2f"|format(item.employee.base_salary) }} zł</td>
+                            <td class="px-6 py-4 text-right font-medium">{{ "%.2f"|format(item.gross_total) }} zł</td>
+                            <td class="px-6 py-4 text-right text-slate-500">{{ "%.2f"|format(item.social_zus + item.health_zus) }} zł</td>
+                            <td class="px-6 py-4 text-right text-slate-500">
+                                {% if item.pit_advance == 0 %}
+                                    <span class="text-emerald-600 font-medium">0 zł (Młodzi)</span>
+                                {% else %}
+                                    {{ "%.2f"|format(item.pit_advance) }} zł
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right font-bold text-slate-900">
+                                {{ "%.2f"|format(item.net_amount) }} zł
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
