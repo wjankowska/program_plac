@@ -2,110 +2,268 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Płacowy – Payroll Core</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrum Nadzoru i Płac</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">System Płacowy</h1>
-                <p class="text-slate-500 text-sm">Automatyczne naliczanie list płac na podstawie RCP i e-ZLA</p>
+    
+    <!-- Pasek nagłówka -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20 shadow-sm flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-building-shield text-lg"></i>
             </div>
-            <div class="flex gap-3">
-                <form action="/payroll/calculate-view" method="post">
-                    <input type="hidden" name="year" value="2026">
-                    <input type="hidden" name="month" value="9">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
-                        ⚡ Przelicz wrzesień 2026
-                    </button>
-                </form>
-                <a href="/payroll/export-elixir-file?year=2026&month=9" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
-                    📥 Paczka do banku (Elixir)
-                </a>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">WorkGuard & Payroll</h1>
+                <p class="text-xs text-slate-500">System RCP, Bezpieczeństwa BHP i Płac</p>
             </div>
         </div>
 
-        <!-- Karty ze statystykami -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <!-- Przycisk listy ewakuacyjnej (BHP) -->
+        <div class="flex items-center gap-3">
+            <a href="/evacuation" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                LISTA EWAKUACYJNA (BHP)
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Płytki statystyk -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <span class="text-xs font-semibold uppercase text-slate-400">Pracownicy</span>
+                <span class="text-xs font-semibold uppercase text-slate-400">Pracownicy łącznie</span>
                 <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.total_employees }}</p>
             </div>
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <span class="text-xs font-semibold uppercase text-slate-400">Suma Brutto</span>
-                <p class="text-2xl font-bold text-slate-900 mt-1">{{ "%.2f"|format(stats.total_gross) }} zł</p>
+            <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-200 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase text-emerald-700">W budynku teraz</span>
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                </div>
+                <p class="text-2xl font-bold text-emerald-800 mt-1">{{ stats.in_count }} os.</p>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-semibold uppercase text-slate-500">Poza biurem</span>
+                <p class="text-2xl font-bold text-slate-600 mt-1">{{ stats.out_count }} os.</p>
             </div>
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <span class="text-xs font-semibold uppercase text-slate-400">Składki ZUS (Pracownik)</span>
-                <p class="text-2xl font-bold text-indigo-600 mt-1">{{ "%.2f"|format(stats.total_zus) }} zł</p>
+                <span class="text-xs font-semibold uppercase text-slate-400">Wypłaty (Netto)</span>
+                <p class="text-2xl font-bold text-indigo-600 mt-1">{{ "%.2f"|format(stats.total_net) }} zł</p>
             </div>
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <span class="text-xs font-semibold uppercase text-slate-400">Do wypłaty (Netto)</span>
-                <p class="text-2xl font-bold text-emerald-600 mt-1">{{ "%.2f"|format(stats.total_net) }} zł</p>
-            </div>
+        </section>
+
+        <!-- Zakładki nawigacji -->
+        <div class="flex border-b border-slate-200 mb-6 gap-2">
+            <a href="/?tab=presence" class="px-5 py-3 font-medium text-sm rounded-t-lg transition flex items-center gap-2 {% if tab == 'presence' %}border-b-2 border-indigo-600 text-indigo-600 bg-white font-semibold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <i class="fa-solid fa-user-check"></i> Podgląd obecności na żywo
+            </a>
+            <a href="/?tab=history" class="px-5 py-3 font-medium text-sm rounded-t-lg transition flex items-center gap-2 {% if tab == 'history' %}border-b-2 border-indigo-600 text-indigo-600 bg-white font-semibold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left"></i> Historia wejść i wyjść
+            </a>
+            <a href="/?tab=payroll" class="px-5 py-3 font-medium text-sm rounded-t-lg transition flex items-center gap-2 {% if tab == 'payroll' %}border-b-2 border-indigo-600 text-indigo-600 bg-white font-semibold{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+                <i class="fa-solid fa-wallet"></i> Lista Płac
+            </a>
         </div>
 
-        <!-- Tabela z listą płac -->
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h2 class="font-semibold text-slate-800">Lista płac – Wrzesień 2026</h2>
-                <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-medium">50 pozycji</span>
+        <!-- ZAKŁADKA 1: PODGLĄD OBECNOŚCI NA ŻYWO -->
+        {% if tab == 'presence' %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Lewa kolumna: Lista osób w budynku -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 bg-emerald-500 text-white font-semibold flex justify-between items-center">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-door-open"></i> Obecni na terenie firmy ({{ in_building|length }})</span>
+                        <span class="text-xs bg-emerald-700/50 px-2 py-1 rounded">Aktualny stan</span>
+                    </div>
+                    <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                        {% for emp in in_building %}
+                        <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+                            <div>
+                                <h4 class="font-semibold text-slate-800">{{ emp.name }}</h4>
+                                <p class="text-xs text-slate-400 font-mono">Karta: {{ emp.card_uid }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> W budynku
+                                </span>
+                                <p class="text-xs text-slate-400 mt-1">Wejście: {{ emp.last_time }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-8 text-center text-slate-400">Brak obecnych pracowników.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Lista osób poza biurem -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-100 font-semibold text-slate-700 flex justify-between items-center">
+                        <span>Poza budynkiem ({{ out_of_building|length }})</span>
+                    </div>
+                    <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                        {% for emp in out_of_building %}
+                        <div class="p-3 px-6 flex items-center justify-between hover:bg-slate-50">
+                            <span class="text-sm font-medium text-slate-700">{{ emp.name }}</span>
+                            <span class="text-xs text-slate-400">Ost. aktywność: {{ emp.last_time }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
+
+            <!-- Prawa kolumna: Symulator odbicia karty (dla testów) -->
+            <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm h-fit">
+                <h3 class="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-id-badge text-indigo-600"></i> Symulator czytnika kart
+                </h3>
+                <p class="text-xs text-slate-500 mb-5">Możesz zasymulować przyłożenie karty przez pracownika przy wejściu lub wyjściu.</p>
+                
+                <form action="/rfid/manual-swipe" method="post" class="space-y-4">
+                    <input type="hidden" name="tab" value="presence">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pracownik</label>
+                        <select name="employee_id" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500">
+                            {% for e in all_employees %}
+                            <option value="{{ e.id }}">{{ e.first_name }} {{ e.last_name }} ({{ e.card_uid }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Zdarzenie</label>
+                        <select name="event_type" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500">
+                            <option value="IN">🟢 Odbicie WEJŚCIA (IN)</option>
+                            <option value="OUT">🔴 Odbicie WYJŚCIA (OUT)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
+                        Odbij kartę teraz
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ZAKŁADKA 2: HISTORIA ODBIĆ -->
+        {% if tab == 'history' %}
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+                <div>
+                    <h2 class="font-semibold text-slate-900">Rejestr zdarzeń RCP (Audit Log)</h2>
+                    <p class="text-xs text-slate-500">Precyzyjne dowody wejść i wyjść w razie wyjaśniania incydentów</p>
+                </div>
+
+                <!-- Filtr po pracowniku -->
+                <form action="/" method="get" class="flex gap-2">
+                    <input type="hidden" name="tab" value="history">
+                    <select name="emp_filter" onchange="this.form.submit()" class="bg-white border border-slate-300 rounded-lg text-sm px-3 py-2">
+                        <option value="">Wszyscy pracownicy</option>
+                        {% for e in all_employees %}
+                        <option value="{{ e.id }}" {% if emp_filter == e.id %}selected{% endif %}>{{ e.first_name }} {{ e.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
                         <tr>
+                            <th class="px-6 py-3 font-semibold">Data i Godzina</th>
                             <th class="px-6 py-3 font-semibold">Pracownik</th>
                             <th class="px-6 py-3 font-semibold">Karta UID</th>
-                            <th class="px-6 py-3 font-semibold text-center">Chorobowe</th>
-                            <th class="px-6 py-3 font-semibold text-right">Zasadnicza</th>
-                            <th class="px-6 py-3 font-semibold text-right">Brutto</th>
-                            <th class="px-6 py-3 font-semibold text-right">ZUS</th>
-                            <th class="px-6 py-3 font-semibold text-right">PIT</th>
-                            <th class="px-6 py-3 font-semibold text-right text-slate-900">Netto</th>
+                            <th class="px-6 py-3 font-semibold text-center">Kierunek</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        {% for item in records %}
-                        <tr class="hover:bg-slate-50/80 transition">
-                            <td class="px-6 py-4 font-medium text-slate-900">
-                                {{ item.employee.first_name }} {{ item.employee.last_name }}
-                            </td>
-                            <td class="px-6 py-4 font-mono text-xs text-slate-400">
-                                {{ item.employee.card_uid }}
-                            </td>
+                        {% for ev in recent_events %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-mono text-slate-900">{{ ev.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td class="px-6 py-4 font-medium text-slate-800">{{ ev.employee.first_name }} {{ ev.employee.last_name }}</td>
+                            <td class="px-6 py-4 font-mono text-xs text-slate-400">{{ ev.employee.card_uid }}</td>
                             <td class="px-6 py-4 text-center">
-                                {% if item.sick_days > 0 %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                        {{ item.sick_days }} dni ZLA
-                                    </span>
+                                {% if ev.event_type == 'IN' %}
+                                <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">WEJŚCIE</span>
                                 {% else %}
-                                    <span class="text-slate-300">-</span>
+                                <span class="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-bold">WYJŚCIE</span>
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 text-right">{{ "%.2f"|format(item.employee.base_salary) }} zł</td>
-                            <td class="px-6 py-4 text-right font-medium">{{ "%.2f"|format(item.gross_total) }} zł</td>
-                            <td class="px-6 py-4 text-right text-slate-500">{{ "%.2f"|format(item.social_zus + item.health_zus) }} zł</td>
-                            <td class="px-6 py-4 text-right text-slate-500">
-                                {% if item.pit_advance == 0 %}
-                                    <span class="text-emerald-600 font-medium">0 zł (Młodzi)</span>
-                                {% else %}
-                                    {{ "%.2f"|format(item.pit_advance) }} zł
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 text-right font-bold text-slate-900">
-                                {{ "%.2f"|format(item.net_amount) }} zł
-                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="p-6 text-center text-slate-400">Brak zarejestrowanych odbić dla wybranego filtra.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+        {% endif %}
 
-    </div>
+        <!-- ZAKŁADKA 3: LISTA PŁAC -->
+        {% if tab == 'payroll' %}
+        <div class="space-y-6">
+            <div class="flex justify-end gap-3">
+                <form action="/payroll/calculate-view" method="post">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2 rounded-lg text-sm shadow-sm transition">
+                        ⚡ Przelicz wrzesień 2026
+                    </button>
+                </form>
+                <a href="/payroll/export-elixir-file" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg text-sm shadow-sm transition">
+                    📥 Paczka do banku (Elixir)
+                </a>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Pracownik</th>
+                                <th class="px-6 py-3 font-semibold text-center">Chorobowe e-ZLA</th>
+                                <th class="px-6 py-3 font-semibold text-right">Zasadnicza</th>
+                                <th class="px-6 py-3 font-semibold text-right">Brutto</th>
+                                <th class="px-6 py-3 font-semibold text-right">ZUS</th>
+                                <th class="px-6 py-3 font-semibold text-right">PIT</th>
+                                <th class="px-6 py-3 font-semibold text-right text-slate-900">Netto</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for item in records %}
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="px-6 py-4 font-medium text-slate-900">{{ item.employee.first_name }} {{ item.employee.last_name }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if item.sick_days > 0 %}
+                                    <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">{{ item.sick_days }} dni</span>
+                                    {% else %}
+                                    <span class="text-slate-300">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-right">{{ "%.2f"|format(item.employee.base_salary) }} zł</td>
+                                <td class="px-6 py-4 text-right font-medium">{{ "%.2f"|format(item.gross_total) }} zł</td>
+                                <td class="px-6 py-4 text-right text-slate-500">{{ "%.2f"|format(item.social_zus + item.health_zus) }} zł</td>
+                                <td class="px-6 py-4 text-right text-slate-500">
+                                    {% if item.pit_advance == 0 %}
+                                    <span class="text-emerald-600 font-medium">0 zł (Młodzi)</span>
+                                    {% else %}
+                                    {{ "%.2f"|format(item.pit_advance) }} zł
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-right font-bold text-slate-900">{{ "%.2f"|format(item.net_amount) }} zł</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
 </body>
 </html>

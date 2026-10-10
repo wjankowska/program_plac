@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>RAPORT EWAKUACYJNY BHP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-900 p-8 max-w-4xl mx-auto">
+
+    <div class="no-print flex justify-between items-center bg-rose-50 border border-rose-200 p-4 rounded-xl mb-6">
+        <div>
+            <h3 class="font-bold text-rose-800">LISTA OSÓB PRZEBYWAJĄCYCH W BUDYNKU</h3>
+            <p class="text-xs text-rose-600">Dokument sporządzony na potrzeby procedur ewakuacyjnych i BHP.</p>
+        </div>
+        <button onclick="window.print()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-lg shadow">
+            🖨️ Drukuj listę natychmiast
+        </button>
+    </div>
+
+    <div class="border-b-2 border-slate-900 pb-4 mb-6">
+        <h1 class="text-2xl font-black uppercase tracking-wider text-rose-600">Raport Obecności w Obiekcie – Ewakuacja</h1>
+        <div class="flex justify-between text-sm mt-2 text-slate-600">
+            <span>Wygenerowano: <strong>{{ generated_at }}</strong></span>
+            <span>Liczba osób do ewakuacji: <strong class="text-rose-600 text-base">{{ count }}</strong></span>
+        </div>
+    </div>
+
+    <table class="w-full text-left border-collapse border border-slate-300 text-sm">
+        <thead>
+            <tr class="bg-slate-100 border-b border-slate-300">
+                <th class="p-2 border border-slate-300 w-12 text-center">Lp.</th>
+                <th class="p-2 border border-slate-300">Imię i Nazwisko</th>
+                <th class="p-2 border border-slate-300">Karta RFID</th>
+                <th class="p-2 border border-slate-300">Czas wejścia</th>
+                <th class="p-2 border border-slate-300 w-32 text-center">Podpis / Odznaczono</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in in_building %}
+            <tr class="border-b border-slate-200">
+                <td class="p-2 border border-slate-300 text-center font-mono">{{ loop.index }}</td>
+                <td class="p-2 border border-slate-300 font-bold">{{ p.name }}</td>
+                <td class="p-2 border border-slate-300 font-mono text-xs">{{ p.card_uid }}</td>
+                <td class="p-2 border border-slate-300">{{ p.last_time }}</td>
+                <td class="p-2 border border-slate-300 text-center font-mono">[ &nbsp; &nbsp; ]</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="p-4 text-center text-slate-500">W obiekcie nie zarejestrowano żadnych osób.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="mt-8 text-xs text-slate-500 border-t pt-4 flex justify-between">
+        <span>Kierownik ewakuacji / Koordynator BHP: ............................................</span>
+        <span>Potwierdzenie stanu: [ TAK / NIE ]</span>
+    </div>
+
+</body>
+</html>
